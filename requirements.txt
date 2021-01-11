@@ -1,0 +1,7 @@
+scipy==1.5.4
+tqdm
+facenet-pytorch==2.5.1
+matplotlib==3.3.3
+opencv-python==4.5.1.48
+jsonlines==2.0.0
+scikit-image==0.17.2
