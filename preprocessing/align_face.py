@@ -62,7 +62,9 @@ def main(args):
 
             cropped_file_path = os.path.join(cropped_image_dir, f"{image_idx}.jpg")
             cv2.imwrite(cropped_file_path, cropped_frame)
-            fout.write({"cropped_file_path": cropped_file_path}.update(image_info))
+            cropped_image_info = {"cropped_file_path": cropped_file_path}
+            cropped_image_info.update(image_info)
+            fout.write(cropped_image_info)
             image_idx += 1
             if image_idx % 10000 == 0:
                 print(f"already processing {image_idx} images")
