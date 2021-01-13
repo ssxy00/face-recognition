@@ -44,3 +44,17 @@ python align_face.py \
 --cropped_image_list_file ${CROPPED_IMAGE_LIST_FILE} \
 --cropped_image_dir ${CROPPED_IMAGE_DIR}
 ```
+
+### Stage 4: split
+将数据集按照 9:1 的比例划分为训练集 `TRAIN_LIST_FILE` 和验证集 `VALID_LIST_FILE`
+
+| training set | validation set | total |
+| ---- | ---- | ---- |
+| 441,745 | 49,082 | 490,827 |
+
+```
+python random_split.py \
+--cropped_image_list_file ${CROPPED_IMAGE_LIST_FILE} \
+--train_list_file ${TRAIN_LIST_FILE} \
+--valid_list_file ${VALID_LIST_FILE}
+```
