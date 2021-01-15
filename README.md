@@ -58,3 +58,19 @@ python random_split.py \
 --train_list_file ${TRAIN_LIST_FILE} \
 --valid_list_file ${VALID_LIST_FILE}
 ```
+
+## Training
+### without center-loss
+目前在训练一个 baseline，只用 cross-entropy Loss 训练，先不加 center loss，作为参照
+
+| arguments |  |
+| ---- | ---- |
+| optimizer | SGD |
+| batch size | 256 |
+| n_epochs | ? |
+| lr | ? (根据 valid loss 手动调) |
+
+### TODO
+- [ ] center loss
+- [ ] test on LFW
+
