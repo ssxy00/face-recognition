@@ -34,13 +34,13 @@ def main(args):
 def cli_main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cropped_image_list_file",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/cropped_image_list.jsonl",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/cropped_image_list.jsonl",
                         help="input file, each line records the metadata of an image")
     parser.add_argument("--train_list_file",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/train_list.jsonl",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/train_list.jsonl",
                         help="output file, each line records the metadata of an image belonging to the training set")
     parser.add_argument("--valid_list_file",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/valid_list.jsonl",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/valid_list.jsonl",
                         help="output file, each line records the metadata of an image belonging to the validation set")
     parser.add_argument("--valid_ratio", type=float, default=0.1, help="proportion of validation set to total data")
 

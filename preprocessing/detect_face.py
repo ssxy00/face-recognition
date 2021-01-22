@@ -59,6 +59,12 @@ class FaceDetector:
                 boxes.extend(batch_boxes)
                 frames = []
 
+        if len(frames):
+            batch_boxes, batch_probs, batch_landmarks = self.mtcnn.detect(frames, landmarks=True)
+            probs.extend(batch_probs)
+            landmarks.extend(batch_landmarks)
+            boxes.extend(batch_boxes)
+
         # save
         with jsonlines.open(image_with_landmark_list_file, 'w') as fout:
             for image_info, prob, box, landmark in zip(image_infos, probs, boxes, landmarks):
@@ -84,10 +90,10 @@ def main(args):
 def cli_main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--image_list_file",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/image_list.jsonl",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/image_list.jsonl",
                         help="input file, each line records the metadata of an image")
     parser.add_argument("--image_with_landmark_list_file",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/image_with_landmark_list.jsonl",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/image_with_landmark_list.jsonl",
                         help="output file, each line records the metadata of an image")
     parser.add_argument("--device", default='cuda' if torch.cuda.is_available() else 'cpu', type=str,
                         help="cpu or cuda")
@@ -95,6 +101,7 @@ def cli_main():
 
     args = parser.parse_args()
     main(args)
+
 
 if __name__ == "__main__":
     cli_main()

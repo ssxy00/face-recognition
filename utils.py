@@ -15,7 +15,7 @@ def set_seed(seed):
     random.seed(seed)
 
 
-def train_transform_f():
+def transform_f():
     return transforms.Compose(
         [
             transforms.ToTensor(),
@@ -24,3 +24,11 @@ def train_transform_f():
     )
 
 
+def transform_with_flip_f():
+    return transforms.Compose(
+        [
+            transforms.RandomHorizontalFlip(p=1),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+        ]
+    )

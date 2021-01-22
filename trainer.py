@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class MultiStepSchedule:
-    def __init__(self, total_steps, gamma, init_lr, optimizer, milestones=(4/7, 6/7)):
+    def __init__(self, total_steps, gamma, init_lr, optimizer, milestones=(0.3, 0.6, 0.9)):
         self.total_steps = total_steps
         self.milestone_steps = [int(total_steps * milestone) for milestone in milestones]
         self.init_lr = init_lr
@@ -55,6 +55,7 @@ class MultiStepSchedule:
             self.lr = self.lr * self.gamma
         return self.lr
 
+
 class FRTrainer:
     def __init__(self, train_dataset, valid_dataset, model, args):
         # log
@@ -81,12 +82,13 @@ class FRTrainer:
 
         # optimize
         self.ce_criterion = nn.CrossEntropyLoss()
-        # base_optimizer = SGD(self.model.parameters(), lr=args.lr)
-        # total_steps = math.ceil(self.args.n_epochs * len(self.train_dataset) / self.args.batch_size)
-        # self.optimizer = MultiStepSchedule(total_steps=total_steps, gamma=0.1, init_lr=args.lr,
-        #                                    optimizer=base_optimizer)
-        self.optimizer = SGD(self.model.parameters(), lr=args.lr)
-
+        if self.args.lr_schedule == "none":
+            self.optimizer = SGD(self.model.parameters(), lr=args.lr)
+        elif self.args.lr_schedule == "multi_step":
+            base_optimizer = SGD(self.model.parameters(), lr=args.lr)
+            total_steps = math.ceil(self.args.n_epochs * len(self.train_dataset) / self.args.batch_size)
+            self.optimizer = MultiStepSchedule(total_steps=total_steps, gamma=args.gamma, init_lr=args.lr,
+                                               optimizer=base_optimizer)
 
     def train_epoch(self, epoch):
         self.model.train()
@@ -120,17 +122,14 @@ class FRTrainer:
                                    (epoch - 1) * len(tqdm_data) + i + 1)
             self.writer.add_scalar('Train/lr', self.optimizer.param_groups[0]['lr'],
                                    (epoch - 1) * len(tqdm_data) + i + 1)
-
-
-
-
+        print(f"Train epoch {epoch}, avg_ce_loss: {avg_ce_loss}, acc: {n_correct_samples / n_total_samples}")
 
     def valid_epoch(self, epoch):
         self.model.eval()
         n_total_samples = 0
         n_correct_samples = 0
         avg_ce_loss = 0.
-        valid_dataloader = DataLoader(self.valid_dataset, batch_size=self.args.batch_size, shuffle=True, num_workers=8)
+        valid_dataloader = DataLoader(self.valid_dataset, batch_size=self.args.batch_size, shuffle=False, num_workers=8)
         tqdm_data = tqdm(valid_dataloader, desc='Valid (epoch #{})'.format(epoch))
         for i, data in enumerate(tqdm_data):
             data = {key: data[key].to(self.device) for key in data}
@@ -146,17 +145,13 @@ class FRTrainer:
 
         self.writer.add_scalar('Valid/avg_ce_loss', avg_ce_loss, epoch)
         self.writer.add_scalar('Valid/acc', n_correct_samples / n_total_samples, epoch)
-
-
+        print(f"Valid epoch {epoch}, avg_ce_loss: {avg_ce_loss}, acc: {n_correct_samples / n_total_samples}")
 
     def train(self):
         self.logger.info("begin to train")
-        for epoch_idx in range(self.args.last_ckpt, self.args.n_epochs + 1):
+        for epoch_idx in range(self.args.last_ckpt + 1, self.args.n_epochs + 1):
             self.train_epoch(epoch_idx)
             self.valid_epoch(epoch_idx)
             if epoch_idx % self.args.save_interval == 0:
                 save_path = os.path.join(self.args.save_model_dir, f"checkpoint{epoch_idx}.pt")
                 torch.save(self.model.state_dict(), save_path)
-
-
-

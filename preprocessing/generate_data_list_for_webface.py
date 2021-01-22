@@ -61,7 +61,7 @@ def cli_main():
     parser.add_argument("--name_list_file", default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/names.txt",
                         help="this file records the name of each identity")
     parser.add_argument("--image_list_file",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/image_list.jsonl",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/image_list.jsonl",
                         help="output file, each line records the metadata of an image")
     args = parser.parse_args()
     main(args)

@@ -10,7 +10,9 @@ python -m pip install -r requirements.tx
 ```
 
 ## Preprocessing: Pipeline
+
 ### Stage 1: extract meta data 
+#### CASIA-WebFace
 读取 CASIA-WebFace 的图片信息
 
 这个部分的会用到两个文件（夹）：
@@ -22,6 +24,18 @@ python -m pip install -r requirements.tx
 python generate_data_list_for_webface.py \
 --image_dir ${IMAGE_DIR} \
 --name_list_file ${NAME_LIST_FILE} \
+--image_list_file ${IMAGE_LIST_FILE}
+```
+
+#### LFW
+读取 LFW 的图片信息
+
+这个部分需要用到从 [here](http://vis-www.cs.umass.edu/lfw/lfw.tgz) 下载的数据，解压后的路径为 `IMAGE_DIR`，
+读取的图片信息保存在 `IMAGE_LIST_FILE`
+
+```
+python generate_data_list_for_lfw.py \
+--image_dir ${IMAGE_DIR} \
 --image_list_file ${IMAGE_LIST_FILE}
 ```
 
@@ -46,11 +60,11 @@ python align_face.py \
 ```
 
 ### Stage 4: split
-将数据集按照 9:1 的比例划分为训练集 `TRAIN_LIST_FILE` 和验证集 `VALID_LIST_FILE`
+将 CASIA-WebFace 数据集按照 9:1 的比例划分为训练集 `TRAIN_LIST_FILE` 和验证集 `VALID_LIST_FILE`
 
 | training set | validation set | total |
 | ---- | ---- | ---- |
-| 441,745 | 49,082 | 490,827 |
+| 442,494 | 49,166 | 491,660 |
 
 ```
 python random_split.py \
@@ -73,4 +87,8 @@ python random_split.py \
 ### TODO
 - [ ] center loss
 - [ ] test on LFW
+
+
+## Evaluation
+### preprocessing
 

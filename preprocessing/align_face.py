@@ -51,7 +51,6 @@ def align(frame, landmark):
 def main(args):
     count = 0
     image_idx = 1
-    cropped_image_dir = "/home1/sxy/datasets/face_recognition/CASIA-WebFace/cropped_images"
     with open(args.image_with_landmark_list_file) as fin, jsonlines.open(args.cropped_image_list_file, 'w') as fout:
         for image_info in jsonlines.Reader(fin):
             frame = cv2.imread(image_info["file_path"])
@@ -60,7 +59,7 @@ def main(args):
                 continue
             cropped_frame = align(frame, np.array(image_info["landmark"], dtype=np.float32))
 
-            cropped_file_path = os.path.join(cropped_image_dir, f"{image_idx}.jpg")
+            cropped_file_path = os.path.join(args.cropped_image_dir, f"{image_idx}.jpg")
             cv2.imwrite(cropped_file_path, cropped_frame)
             cropped_image_info = {"cropped_file_path": cropped_file_path}
             cropped_image_info.update(image_info)
@@ -68,19 +67,19 @@ def main(args):
             image_idx += 1
             if image_idx % 10000 == 0:
                 print(f"already processing {image_idx} images")
-    print(count)  # 2471
+    print(count)  # 2754
 
 
 def cli_main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--image_with_landmark_list_file",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/image_with_landmark_list.jsonl",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/image_with_landmark_list.jsonl",
                         help="input file, each line records the metadata of an image")
     parser.add_argument("--cropped_image_list_file",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/cropped_image_list.jsonl",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/cropped_image_list.jsonl",
                         help="output file, each line records the metadata of an image")
     parser.add_argument("--cropped_image_dir",
-                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace/cropped_images",
+                        default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/cropped_images",
                         help="output dir of cropped images")
 
     args = parser.parse_args()
