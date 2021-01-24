@@ -74,21 +74,134 @@ python random_split.py \
 ```
 
 ## Training
+
 ### without center-loss
-目前在训练一个 baseline，只用 cross-entropy Loss 训练，先不加 center loss，作为参照
+baseline，只用 cross-entropy Loss 训练
 
-| arguments |  |
-| ---- | ---- |
-| optimizer | SGD |
-| batch size | 256 |
-| n_epochs | ? |
-| lr | ? (根据 valid loss 手动调) |
+#### model A-ResNet
+不使用 ImageNet pre-trained 参数
+```
+# best ckpt: 17
+TRAIN_DATA=${TRAIN_LIST_FILE}
+VALID_DATA=${VALID_LIST_FILE}
+NAME_DATA=${NAME_LIST_FILE}
 
-### TODO
-- [ ] center loss
-- [ ] test on LFW
+MODEL_DIR=/path/to/save/model/checkpoints
+LOG_DIR=/path/to/save/tensorboard/logs
+
+mkdir -p $MODEL_DIR
+mkdir -p $LOG_DIR
+
+CUDA_VISIBLE_DEVICES=0 python train.py \
+--train_list_file $TRAIN_DATA \
+--valid_list_file $VALID_DATA \
+--name_list_file $NAME_DATA \
+--batch_size 256 \
+--n_epochs 100 \
+--lr 2e-1 --last_ckpt 0 \
+--lr_schedule multi_step --gamma 0.1 \
+--save_model_dir $MODEL_DIR \
+--save_interval 1 \
+--log_dir $LOG_DIR
+```
+
+
+#### model A-ResNet+
+使用 ImageNet pre-trained 参数
+
+```
+# best ckpt: 16
+TRAIN_DATA=${TRAIN_LIST_FILE}
+VALID_DATA=${VALID_LIST_FILE}
+NAME_DATA=${NAME_LIST_FILE}
+
+MODEL_DIR=/path/to/save/model/checkpoints
+LOG_DIR=/path/to/save/tensorboard/logs
+
+mkdir -p $MODEL_DIR
+mkdir -p $LOG_DIR
+
+CUDA_VISIBLE_DEVICES=0 python train.py \
+--train_list_file $TRAIN_DATA \
+--valid_list_file $VALID_DATA \
+--name_list_file $NAME_DATA \
+--resnet_pretrain \
+--batch_size 256 \
+--n_epochs 50 \
+--lr 2e-1 --last_ckpt 0 \
+--lr_schedule none \
+--save_model_dir $MODEL_DIR \
+--save_interval 1 \
+--log_dir $LOG_DIR
+```
+
+### with center loss
+在 softmax 基础上加入 center loss
+
+$\mathcal{L} = \mathcal{L}_S + \mathcal{L}_C$
+
+#### model C-ResNet
+不使用 ImageNet pre-trained 参数
+```
+# best ckpt: 33
+TRAIN_DATA=${TRAIN_LIST_FILE}
+VALID_DATA=${VALID_LIST_FILE}
+NAME_DATA=${NAME_LIST_FILE}
+
+MODEL_DIR=/path/to/save/model/checkpoints
+LOG_DIR=/path/to/save/tensorboard/logs
+
+mkdir -p $MODEL_DIR
+mkdir -p $LOG_DIR
+
+CUDA_VISIBLE_DEVICES=0 python train.py \
+--train_list_file $TRAIN_DATA \
+--valid_list_file $VALID_DATA \
+--name_list_file $NAME_DATA \
+--center_loss \
+--batch_size 256 \
+--n_epochs 100 \
+--lr 2e-1 --last_ckpt 0 \
+--lr_schedule multi_step --gamma 0.1 \
+--save_model_dir $MODEL_DIR \
+--save_interval 1 \
+--log_dir $LOG_DIR \
+--lambda_factor 3e-2
+```
+
+#### model C-ResNet+
+不使用 ImageNet pre-trained 参数
+```
+# best ckpt: 16
+TRAIN_DATA=${TRAIN_LIST_FILE}
+VALID_DATA=${VALID_LIST_FILE}
+NAME_DATA=${NAME_LIST_FILE}
+
+MODEL_DIR=/path/to/save/model/checkpoints
+LOG_DIR=/path/to/save/tensorboard/logs
+
+mkdir -p $MODEL_DIR
+mkdir -p $LOG_DIR
+
+CUDA_VISIBLE_DEVICES=0 python train.py \
+--train_list_file $TRAIN_DATA \
+--valid_list_file $VALID_DATA \
+--name_list_file $NAME_DATA \
+--resnet_pretrain \
+--center_loss \
+--batch_size 256 \
+--n_epochs 50 \
+--lr 2e-1 --last_ckpt 0 \
+--lr_schedule none \
+--save_model_dir $MODEL_DIR \
+--save_interval 1 \
+--log_dir $LOG_DIR \
+--lambda_factor 3e-3
+```
+
+### center initializatoin
 
 
 ## Evaluation
-### preprocessing
+
 
