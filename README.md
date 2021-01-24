@@ -1,4 +1,15 @@
 # face-recognition
+## References
++ [Center Loss](https://ydwen.github.io/papers/WenECCV16.pdf) Wen, Yandong, et al. "A discriminative feature learning approach for deep face recognition." European conference on computer vision. Springer, Cham, 2016.
++ [CASIA-WebFace](https://arxiv.org/pdf/1411.7923.pdf) Yi, D., et al. "Learning face representation from scratch. arXiv 2014." arXiv preprint arXiv:1411.7923.
++ [MTCNN](https://ieeexplore.ieee.org/abstract/document/7553523) Zhang, Kaipeng, et al. "Joint face detection and alignment using multitask cascaded convolutional networks." IEEE Signal Processing Letters 23.10 (2016): 1499-1503.
++ [Labeled Faces in the Wild](http://vis-www.cs.umass.edu/lfw/) Gary B. Huang, Manu Ramesh, Tamara Berg, and Erik Learned-Miller. Labeled Faces in the Wild: A Database for Studying Face Recognition in Unconstrained Environments. University of Massachusetts, Amherst, Technical Report 07-49, October, 2007.
++ [center-loss.pytorch](https://github.com/louis-she/center-loss.pytorch)
++ [Face Recognition using Tensorflow](https://github.com/davidsandberg/facenet)
++ [Face Recognition Using Pytorch](https://github.com/timesler/facenet-pytorch)
++ [基于MTCNN与insightface的人脸打卡系统](https://blog.nowcoder.net/n/ec11ac368c6c4149834c46e6fe257f81)
++ [sphereface](https://github.com/wy1iu/sphereface/blob/master/preprocess/code/face_align_demo.m)
+
 ## Install
 + python==3.6.8
 + pytorch==1.4.0
