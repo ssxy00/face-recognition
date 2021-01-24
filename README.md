@@ -199,7 +199,56 @@ CUDA_VISIBLE_DEVICES=0 python train.py \
 --lambda_factor 3e-3
 ```
 
-### center initializatoin
+### center initialization: model D
+这一部分对 center 的初始化做了改进：
++ 使用 model A-ResNet+ 为训练数据的每个类计算类中心
++ 基于 model A-ResNet+ 再 fine-tune 10 个 epoch
+
+#### calculate center
+```
+TRAIN_DATA=${TRAIN_LIST_FILE}
+NAME_DATA=${NAME_LIST_FILE}
+CHECKPOINT_PATH=/path/to/trained/A-ResNet+/checkpoint
+CENTER_PATH=/path/to/save/calculated/center
+
+CUDA_VISIBLE_DEVICES=0 python calculate_center.py \
+--train_list_file $TRAIN_DATA \
+--name_list_file $NAME_DATA \
+--checkpoint_path $CHECKPOINT_PATH \
+--center_path $CENTER_PATH \
+--batch_size 256
+```
+
+#### training
+```
+TRAIN_DATA=${TRAIN_LIST_FILE}
+VALID_DATA=${VALID_LIST_FILE}
+NAME_DATA=${NAME_LIST_FILE}
+CHECKPOINT_PATH=/path/to/trained/A-ResNet+/checkpoint
+CENTER_PATH=/path/to/calculated/center
+
+MODEL_DIR=/path/to/save/model/checkpoints
+LOG_DIR=/path/to/save/tensorboard/logs
+
+mkdir -p $MODEL_DIR
+mkdir -p $LOG_DIR
+
+CUDA_VISIBLE_DEVICES=0 python train_center_loss.py \
+--train_list_file $TRAIN_DATA \
+--valid_list_file $VALID_DATA \
+--name_list_file $NAME_DATA \
+--center_path $CENTER_PATH \
+--checkpoint_path $CHECKPOINT_PATH \
+--batch_size 256 \
+--n_epochs 10 \
+--lr 5e-3 \
+--lr_schedule none \
+--save_model_dir $MODEL_DIR \
+--save_interval 1 \
+--log_dir $LOG_DIR 
+--lambda_factor 1 \
+--ce_factor 0.1 \
+```
 
 
 ## Evaluation

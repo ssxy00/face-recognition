@@ -35,6 +35,7 @@ def transform_with_flip_f():
 
 
 def get_center_delta(features, centers, targets):
+    # 这一部分想到的写法会用到 for 循环，效率比较低，所以参考了 github 上的一个实现：
     # modified from https://github.com/louis-she/center-loss.pytorch/blob/5be899d1f622d24d7de0039dc50b54ce5a6b1151/loss.py#L14
     # implementation equation (4) in the center-loss paper
     features = features.view(features.size(0), -1)
