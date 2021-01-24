@@ -38,7 +38,7 @@ def main(args):
 
     # model
     print(f"resnet pretrain: {args.resnet_pretrain}")
-    model = ResnetFRModel(n_class=len(label2name), resnet_pretrain=args.resnet_pretrain)
+    model = ResnetFRModel(n_class=len(label2name), resnet_pretrain=args.resnet_pretrain, center_loss=args.center_loss)
 
     # trainer
     trainer = FRTrainer(train_dataset=train_dataset, valid_dataset=valid_dataset, model=model, args=args)
@@ -57,26 +57,37 @@ def cli_main():
                         help="each line records the metadata of an image belonging to the validation set")
     parser.add_argument("--name_list_file", default="/home1/sxy/datasets/face_recognition/CASIA-WebFace-new/names.txt",
                         help="this file records the name of each identity")
+
     # save
     parser.add_argument("--save_model_dir", type=str, default="/home1/sxy/face_recognition/checkpoints/ce_only",
                         help="path to save model checkpoint")
     parser.add_argument("--save_interval", type=int, default=1)
-    parser.add_argument("--log_dir", type=str, default="/home1/sxy/face_recognition/logs/ce_only",
+    parser.add_argument("--log_dir", type=str, default="/home1/sxy/face_recognition/logs/ce_only/tmp",
                         help="path to save log")
+
     # initial ckpt
     parser.add_argument("--resnet_pretrain", action="store_true", help="load resnet pretrained parameters")
     parser.add_argument("--last_ckpt", default=0, type=int, help="last checkpoint to load")
+
     # basic config
     parser.add_argument("--seed", default=0, type=int, help="random seed")
     parser.add_argument("--device", default='cuda' if torch.cuda.is_available() else 'cpu', type=str,
                         help="cpu or cuda")
+
     # training
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
     parser.add_argument("--n_epochs", default=100, type=int, help="number of training epochs")
+
     # lr
     parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
     parser.add_argument("--lr_schedule", default="none", type=str, help="multi_step or none")
     parser.add_argument("--gamma", default=0.1, type=float, help="lr decay factor")
+
+    # center loss
+    parser.add_argument("--center_loss", action="store_true", help="add center loss")
+    parser.add_argument("--lambda_factor", default=0.003, type=float)
+    parser.add_argument("--alpha", default=0.5, type=float)
+
 
     args = parser.parse_args()
     main(args)

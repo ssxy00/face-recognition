@@ -11,8 +11,10 @@ import torchvision.models as models
 
 class ResnetFRModel(nn.Module):
     # TODO 这个写法会引入额外的参数 fc 层
-    def __init__(self, n_class, resnet_pretrain):
+    def __init__(self, n_class, resnet_pretrain, center_loss=False):
         super(ResnetFRModel, self).__init__()
+        self.center_loss = center_loss
+        self.n_class = n_class
         self.backbone = models.resnet18(pretrained=resnet_pretrain)
         self.classifier = nn.Linear(512, n_class)
 
@@ -31,4 +33,7 @@ class ResnetFRModel(nn.Module):
         x = torch.flatten(x, 1)
         if only_feature:
             return x
-        return self.classifier(x)
+        if self.center_loss:
+            return self.classifier(x), x
+        else:
+            return self.classifier(x)

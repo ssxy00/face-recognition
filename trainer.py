@@ -15,6 +15,8 @@ from torch.utils.data import DataLoader
 from torch.optim import SGD
 from torch.utils.tensorboard import SummaryWriter
 
+from utils import get_center_delta
+
 
 class MultiStepSchedule:
     def __init__(self, total_steps, gamma, init_lr, optimizer, milestones=(0.3, 0.6, 0.9)):
@@ -82,6 +84,9 @@ class FRTrainer:
 
         # optimize
         self.ce_criterion = nn.CrossEntropyLoss()
+        if self.args.center_loss:
+            self.centers = torch.zeros((self.model.n_class, 512), requires_grad=False, device=self.device)
+            self.center_criterion = nn.MSELoss()
         if self.args.lr_schedule == "none":
             self.optimizer = SGD(self.model.parameters(), lr=args.lr)
         elif self.args.lr_schedule == "multi_step":
@@ -103,7 +108,7 @@ class FRTrainer:
             logits = self.model(data["images"])
             # loss
             batch_ce_loss = self.ce_criterion(logits, data['labels'])
-            batch_loss = batch_ce_loss  # TODO center loss
+            batch_loss = batch_ce_loss
             batch_loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -123,6 +128,66 @@ class FRTrainer:
             self.writer.add_scalar('Train/lr', self.optimizer.param_groups[0]['lr'],
                                    (epoch - 1) * len(tqdm_data) + i + 1)
         print(f"Train epoch {epoch}, avg_ce_loss: {avg_ce_loss}, acc: {n_correct_samples / n_total_samples}")
+
+    def train_epoch_with_center_loss(self, epoch):
+        self.model.train()
+        n_total_samples = 0
+        n_correct_samples = 0
+        avg_ce_loss = 0.
+        avg_center_loss = 0.
+        avg_batch_loss = 0.
+
+        train_dataloader = DataLoader(self.train_dataset, batch_size=self.args.batch_size, shuffle=True, num_workers=8)
+        tqdm_data = tqdm(train_dataloader, desc='Train (epoch #{})'.format(epoch))
+        for i, data in enumerate(tqdm_data):
+            data = {key: data[key].to(self.device) for key in data}
+            logits, features = self.model(data["images"])
+            # cross entropy loss
+            batch_ce_loss = self.ce_criterion(logits, data['labels'])
+            # center loss
+            batch_center_loss = self.center_criterion(features, self.centers[data['labels']])
+
+            batch_loss = batch_ce_loss + self.args.lambda_factor * batch_center_loss
+            batch_loss.backward()
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+
+            # update center
+            center_delta = get_center_delta(features.detach(), self.centers, data['labels'])
+            self.centers = self.centers - self.args.alpha * center_delta
+
+            avg_ce_loss = (avg_ce_loss * i + batch_ce_loss.item()) / (i + 1)
+            avg_center_loss = (avg_center_loss * i + batch_center_loss.item()) / (i + 1)
+            avg_batch_loss = (avg_batch_loss * i + batch_loss.item()) / (i + 1)
+            n_correct_samples += sum(logits.argmax(-1) == data["labels"]).item()
+            n_total_samples += logits.shape[0]
+            tqdm_data.set_postfix({'batch_ce_loss': batch_ce_loss.item(),
+                                   'batch_center_loss': batch_center_loss.item(),
+                                   'batch_loss': batch_loss.item(),
+                                   'ave_ce_loss': avg_ce_loss,
+                                   'ave_center_loss': avg_center_loss,
+                                   'avg_loss': avg_batch_loss,
+                                   'acc': n_correct_samples / n_total_samples,
+                                   'lr': self.optimizer.param_groups[0]['lr']})
+
+            self.writer.add_scalar('Train/ce_loss', batch_ce_loss, (epoch - 1) * len(tqdm_data) + i + 1)
+            self.writer.add_scalar('Train/avg_ce_loss', avg_ce_loss, (epoch - 1) * len(tqdm_data) + i + 1)
+
+            self.writer.add_scalar('Train/center_loss', batch_center_loss, (epoch - 1) * len(tqdm_data) + i + 1)
+            self.writer.add_scalar('Train/avg_center_loss', avg_center_loss, (epoch - 1) * len(tqdm_data) + i + 1)
+
+            self.writer.add_scalar('Train/loss', batch_loss, (epoch - 1) * len(tqdm_data) + i + 1)
+            self.writer.add_scalar('Train/avg_loss', avg_batch_loss, (epoch - 1) * len(tqdm_data) + i + 1)
+
+            self.writer.add_scalar('Train/acc', n_correct_samples / n_total_samples,
+                                   (epoch - 1) * len(tqdm_data) + i + 1)
+            self.writer.add_scalar('Train/lr', self.optimizer.param_groups[0]['lr'],
+                                   (epoch - 1) * len(tqdm_data) + i + 1)
+
+        print(f"Train epoch {epoch}, avg_ce_loss: {avg_ce_loss}, avg_center_loss: {avg_center_loss}, "
+              f"avg_loss: {avg_batch_loss}, acc: {n_correct_samples / n_total_samples}")
+
+
 
     def valid_epoch(self, epoch):
         self.model.eval()
@@ -147,11 +212,58 @@ class FRTrainer:
         self.writer.add_scalar('Valid/acc', n_correct_samples / n_total_samples, epoch)
         print(f"Valid epoch {epoch}, avg_ce_loss: {avg_ce_loss}, acc: {n_correct_samples / n_total_samples}")
 
+    def valid_epoch_with_center_loss(self, epoch):
+        self.model.eval()
+        n_total_samples = 0
+        n_correct_samples = 0
+        avg_ce_loss = 0.
+        avg_center_loss = 0.
+        avg_batch_loss = 0.
+
+        valid_dataloader = DataLoader(self.valid_dataset, batch_size=self.args.batch_size, shuffle=False, num_workers=8)
+        tqdm_data = tqdm(valid_dataloader, desc='Valid (epoch #{})'.format(epoch))
+        for i, data in enumerate(tqdm_data):
+            data = {key: data[key].to(self.device) for key in data}
+            logits, features = self.model(data["images"])
+            # cross entropy loss
+            batch_ce_loss = self.ce_criterion(logits, data['labels'])
+            # center loss
+            batch_center_loss = self.center_criterion(features, self.centers[data['labels']])
+
+            batch_loss = batch_ce_loss + self.args.lambda_factor * batch_center_loss
+
+            avg_ce_loss = (avg_ce_loss * i + batch_ce_loss.item()) / (i + 1)
+            avg_center_loss = (avg_center_loss * i + batch_center_loss.item()) / (i + 1)
+            avg_batch_loss = (avg_batch_loss * i + batch_loss.item()) / (i + 1)
+            n_correct_samples += sum(logits.argmax(-1) == data["labels"]).item()
+            n_total_samples += logits.shape[0]
+            tqdm_data.set_postfix({'batch_ce_loss': batch_ce_loss.item(),
+                                   'batch_center_loss': batch_center_loss.item(),
+                                   'batch_loss': batch_loss.item(),
+                                   'ave_ce_loss': avg_ce_loss,
+                                   'ave_center_loss': avg_center_loss,
+                                   'avg_loss': avg_batch_loss,
+                                   'acc': n_correct_samples / n_total_samples})
+
+        self.writer.add_scalar('Valid/avg_ce_loss', avg_ce_loss, epoch)
+        self.writer.add_scalar('Valid/avg_center_loss', avg_center_loss, epoch)
+
+        self.writer.add_scalar('Valid/avg_loss', avg_batch_loss, epoch)
+
+        self.writer.add_scalar('Valid/acc', n_correct_samples / n_total_samples, epoch)
+
+        print(f"Valid epoch {epoch}, avg_ce_loss: {avg_ce_loss}, avg_center_loss: {avg_center_loss}, "
+              f"avg_loss: {avg_batch_loss}, acc: {n_correct_samples / n_total_samples}")
+
     def train(self):
         self.logger.info("begin to train")
         for epoch_idx in range(self.args.last_ckpt + 1, self.args.n_epochs + 1):
-            self.train_epoch(epoch_idx)
-            self.valid_epoch(epoch_idx)
+            if self.args.center_loss:
+                self.train_epoch_with_center_loss(epoch_idx)
+                self.valid_epoch_with_center_loss(epoch_idx)
+            else:
+                self.train_epoch(epoch_idx)
+                self.valid_epoch(epoch_idx)
             if epoch_idx % self.args.save_interval == 0:
                 save_path = os.path.join(self.args.save_model_dir, f"checkpoint{epoch_idx}.pt")
                 torch.save(self.model.state_dict(), save_path)
