@@ -252,5 +252,30 @@ CUDA_VISIBLE_DEVICES=0 python train_center_loss.py \
 
 
 ## Evaluation
+### evaluate script
+在 LFW 数据集上测试模型，需要用到两个文件：
++ 从 [here](http://vis-www.cs.umass.edu/lfw/lfw.tgz) 下载的图片，经过 preprocessing pipeline 处理后得到的记录每张裁剪后图片的 .jsonl 文件，本地路径为 `IMAGE_LIST_FILE`
++ 从 [here](http://vis-www.cs.umass.edu/lfw/pairs.txt) 下载的 LFW pairs.txt 文件，本地路径为 `PAIR_LIST_FILE`
+```
+CHECKPOINT_PATH=/path/to/checkpoint/for/evaluation
+SAVE_DIR=/path/to/save/evaluate/results
+
+CUDA_VISIBLE_DEVICES=0 python evaluate_on_lfw.py \
+--image_list_file $IMAGE_LIST_FILE \
+--pair_list_file $PAIR_LIST_FILE \
+--name_list_file $NAME_LIST_FILE \
+--checkpoint_path $CHECKPOINT_PATH \
+--save_dir $SAVE_DIR \
+--batch_size 32
+```
+
+# results
+| Method | Acc. on LFW |
+| ---- | ---- |
+| model A-ResNet | 92.33 % |
+| model A-ResNet + | 93.30 % |
+| model C-ResNet | 92.50 % |
+| model C-ResNet + | 93.68 % |
+| model D | 94.17 % |
 
 
